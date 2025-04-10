@@ -1,5 +1,6 @@
 const express = require("express")
 const dotenv = require("dotenv")
+const axios = require("axios")
 const app = express()
 dotenv.config()
 
@@ -7,6 +8,7 @@ app.use(express.json())
 app.use(express.urlencoded({extended: true}))
 
 const port = process.env.PORT
+const mpesaEnv = process.env.MPESA_ENVIRONMENT
 
 app.get("/", (req, res) => {
     res.send(`<h1>App is running on port ${port}</h1>`)
@@ -14,6 +16,9 @@ app.get("/", (req, res) => {
 
 // request for authorization
 app.use(async (req, res, next) => {
+    const MPESA_BASE_URL = mpesaEnv === "live" 
+    ? "https://api.safaricom.co.ke" 
+    : "https://sandbox.safaricom.co.ke"
     try {
         const auth = Buffer.from(
             `${process.env.MPESA_CONSUMER_KEY}:${process.env.MPESA_CONSUMER_SECRET}`
@@ -28,8 +33,8 @@ app.use(async (req, res, next) => {
             }
         )
 
-        const token = resp.data.access_token
-
+        req.mpesaToken = resp.data.access_token
+        next()
     } catch (error) {
         return res.status(500).json({
             error: error.message
@@ -41,6 +46,12 @@ app.use(async (req, res, next) => {
 
 app.post("/stk", (req, res) => {
     // token must be there
+    res.json(req.mpesaToken)
+
+    const {phoneNumber, amount} = req.body
+    // validation
+
+    // initiate an stk push
 })
 
 // stkquery
