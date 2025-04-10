@@ -36,6 +36,7 @@ app.use(async (req, res, next) => {
     );
 
     req.mpesaToken = resp.data.access_token;
+    req.auth = auth
     next();
   } catch (error) {
     return res.status(500).json({
@@ -57,14 +58,7 @@ app.post("/stk", async (req, res) => {
 
   const formattedPhone = `254${cleanedNumber.slice(-9)}`; // format to use 254 followed by the last 9 digits
 
-  const date = new Date();
-  const timestamp =
-    date.getFullYear() +
-    ("0" + (date.getMonth() + 1)).slice(-2) +
-    ("0" + date.getDate()).slice(-2) +
-    ("0" + date.getHours()).slice(-2) +
-    ("0" + date.getMinutes()).slice(-2) +
-    ("0" + date.getSeconds()).slice(-2);
+  const timestamp = getTimestamp()
 
   const password = Buffer.from(
     process.env.MPESA_SHORTCODE + process.env.MPESA_PASSKEY + timestamp
@@ -100,7 +94,48 @@ app.post("/stk", async (req, res) => {
 });
 
 // stkquery
+app.post("/stkquery", async (req, res) => {
+  try {
+    const timestamp = getTimestamp()
+    const password = Buffer.from(
+      process.env.MPESA_SHORTCODE + process.env.MPESA_PASSKEY + timestamp
+    ).toString("base64");
+    const reqId = req.body.reqId
+    
+    const response = await axios.post(
+      `${MPESA_BASE_URL}/mpesa/stkpushquery/v1/query`,
+      {
+        BusinessShortCode: process.env.MPESA_SHORTCODE,
+        Password: password,
+        Timestamp: timestamp,
+        CheckoutRequestID: reqId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${req.mpesaToken}`,
+        },
+      }
+    );
+    return { data: response.data };
+  } catch (error) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+})
 
 // b2c
+
+const getTimestamp = () => {
+  const date = new Date();
+  const timestamp =
+    date.getFullYear() +
+    ("0" + (date.getMonth() + 1)).slice(-2) +
+    ("0" + date.getDate()).slice(-2) +
+    ("0" + date.getHours()).slice(-2) +
+    ("0" + date.getMinutes()).slice(-2) +
+    ("0" + date.getSeconds()).slice(-2);
+    return timestamp
+}
 
 app.listen(port, () => `Server is running on port ${port}`);
