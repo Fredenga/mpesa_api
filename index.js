@@ -55,7 +55,7 @@ app.post("/stk", async (req, res) => {
   // initiate an stk push
   const cleanedNumber = phoneNumber.replace(/\D/g, "");
 
-  const formattedPhone = `254${cleanedNumber.slice(-9)}`;
+  const formattedPhone = `254${cleanedNumber.slice(-9)}`; // format to use 254 followed by the last 9 digits
 
   const date = new Date();
   const timestamp =
@@ -76,21 +76,22 @@ app.post("/stk", async (req, res) => {
         BusinessShortCode: process.env.MPESA_SHORTCODE,
         Password: password,
         Timestamp: timestamp,
-        TransactionType: "CustomerPayBillOnline",
+        TransactionType: "CustomerPayBillOnline", //CustomerBuyGoodsOnline - for till
         Amount: amount,
         PartyA: formattedPhone,
-        PartyB: process.env.MPESA_SHORTCODE,
+        PartyB: process.env.MPESA_SHORTCODE, //till number for tills
         PhoneNumber: formattedPhone,
-        CallBackURL: "",
+        CallBackURL: "https://mydomain.com/callback-url-path",
         AccountReference: phoneNumber,
         TransactionDesc: "anything here",
       },
       {
         headers: {
-            Authorization: `Bearer ${req.mpesaToken}`
-        }
+          Authorization: `Bearer ${req.mpesaToken}`,
+        },
       }
     );
+    return res.status(200).json({message: `stk sent successfully to phone number ${formattedPhone}`, data: response.data})
   } catch (error) {
     return res.status(500).json({
       error: error.message,
